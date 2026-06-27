@@ -99,25 +99,37 @@ impl LeaseNFT {
 
     /// End an active lease. Can be called by owner or renter.
     pub fn end_lease(env: Env, caller: Address, listing_id: u64) {
-        caller.require_auth();
-        let listing: Listing = env
-            .storage()
-            .persistent()
-            .get(&DataKey::Listing(listing_id))
-            .expect("listing not found");
-        let lease: ActiveLease = env
-            .storage()
-            .persistent()
-            .get(&DataKey::ActiveLease(listing_id))
-            .expect("no active lease for this listing");
-        assert!(
-            caller == listing.owner || caller == lease.renter,
-            "only owner or renter can end lease"
-        );
-        env.storage()
-            .persistent()
-            .remove(&DataKey::ActiveLease(listing_id));
-    }
+    caller.require_auth();
+
+    let mut listing: Listing = env
+        .storage()
+        .persistent()
+        .get(&DataKey::Listing(listing_id))
+        .expect("listing not found");
+
+    let lease: ActiveLease = env
+        .storage()
+        .persistent()
+        .get(&DataKey::ActiveLease(listing_id))
+        .expect("no active lease for this listing");
+
+    assert!(
+        caller == listing.owner || caller == lease.renter,
+        "only owner or renter can end lease"
+    );
+
+    // Remove active lease
+    env.storage()
+        .persistent()
+        .remove(&DataKey::ActiveLease(listing_id));
+
+    // Make listing available again
+    listing.active = true;
+
+    env.storage()
+        .persistent()
+        .set(&DataKey::Listing(listing_id), &listing);
+}
 
     /// Get listing details.
     pub fn get_listing(env: Env, listing_id: u64) -> Listing {
@@ -133,6 +145,11 @@ impl LeaseNFT {
             .persistent()
             .get(&DataKey::ActiveLease(listing_id))
             .expect("no active lease")
+    }
+
+    /// Get total listing count.
+    pub fn get_listing_count(env: Env) -> u64 {
+        env.storage().instance().get(&COUNT_KEY).unwrap_or(0)
     }
 }
 

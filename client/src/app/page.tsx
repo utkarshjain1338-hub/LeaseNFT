@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useWallet } from "@/hooks/useWallet";
 import { Layers, Code, Zap, Shield, ArrowRight, Wallet } from "lucide-react";
 
@@ -30,7 +30,7 @@ const features = [
 ];
 
 export default function HomePage() {
-  const { isConnected, walletModalOpen, setWalletModalOpen } = useWallet();
+  const { isConnected, setWalletModalOpen } = useWallet();
 
   return (
     <div className="flex flex-col items-center">

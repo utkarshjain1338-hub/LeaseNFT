@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useWallet } from "@/hooks/useWallet";
 import { useTransactionStore } from "@/stores/transactionStore";
 import { useEventStore } from "@/stores/eventStore";
-import { shortenAddress, formatTimestamp, getLeaseStatus } from "@/lib/utils";
+import { shortenAddress, formatTimestamp } from "@/lib/utils";
 import { getExplorerUrl } from "@/lib/config";
 import {
   Wallet,
@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 
 export default function DashboardPage() {
-  const { address, isConnected, balance, network, walletModalOpen, setWalletModalOpen } = useWallet();
+  const { address, isConnected, balance, network, setWalletModalOpen } = useWallet();
   const transactions = useTransactionStore((s) => s.transactions);
   const events = useEventStore((s) => s.events);
 

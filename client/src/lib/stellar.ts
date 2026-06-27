@@ -223,7 +223,7 @@ export async function callContract(
     await new Promise((resolve) => setTimeout(resolve, 2000));
     try {
       account = await server.getAccount(source);
-    } catch (retryErr: unknown) {
+    } catch {
       throw new Error("RPC unavailable — please try again in a moment");
     }
   }

@@ -22,6 +22,7 @@ fn test_full_lease_lifecycle() {
 
     // Initialize
     client.init();
+    assert_eq!(client.get_listing_count(), 0);
 
     // List NFT
     let listing_id = client.list_nft(
@@ -32,6 +33,7 @@ fn test_full_lease_lifecycle() {
         &max_duration,
     );
     assert_eq!(listing_id, 1);
+    assert_eq!(client.get_listing_count(), 1);
 
     // Check listing
     let listing = client.get_listing(&listing_id);

@@ -172,7 +172,7 @@ export function useWallet() {
     if (reconnectAttempted.current) return;
     reconnectAttempted.current = true;
     if (!isConnected || !address) return;
-    refreshBalance();
+    setTimeout(() => refreshBalance(), 0);
   }, [isConnected, address, refreshBalance]);
 
   // ---------------------------------------------------------------------------
@@ -180,7 +180,7 @@ export function useWallet() {
   // ---------------------------------------------------------------------------
   useEffect(() => {
     if (isConnected && address) {
-      refreshBalance();
+      setTimeout(() => refreshBalance(), 0);
     }
   }, [isConnected, address, refreshBalance]);
 

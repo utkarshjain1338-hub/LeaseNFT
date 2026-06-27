@@ -19,7 +19,7 @@
  */
 
 import "dotenv/config";
-import { mkdirSync, writeFileSync, rmSync, readFileSync } from "fs";
+import { mkdirSync, writeFileSync } from "fs";
 import { execSync, exec } from "child_process";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -99,7 +99,7 @@ async function generateBindings({ alias, contractId }) {
       { stdio: "inherit" }
     );
     console.log(`✅ Bindings generated at packages/${alias}`);
-  } catch (err) {
+  } catch {
     console.warn("⚠️  Bindings generation failed, creating placeholder");
     createPlaceholderBindings(outputDir, alias, contractId);
   }
