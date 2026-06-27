@@ -2,17 +2,32 @@
 
 import { useEventStore } from "@/stores/eventStore";
 import { useTransactionStore } from "@/stores/transactionStore";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { formatTimestamp, shortenAddress } from "@/lib/utils";
 import { getExplorerUrl } from "@/lib/config";
-import { Activity, ExternalLink, Loader2, CheckCircle2, XCircle } from "lucide-react";
+import {
+  Activity,
+  ExternalLink,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  Trash2,
+} from "lucide-react";
 
 export function ActivityFeed() {
   const events = useEventStore((s) => s.events);
+  const clearEvents = useEventStore((s) => s.clearEvents);
   const transactions = useTransactionStore((s) => s.transactions);
 
-  // Merge and sort events + transactions by timestamp
+  // Merge and sort events + transactions by timestamp, newest first
   const activityItems = [
     ...events.map((e) => ({
       id: e.id,
@@ -32,46 +47,80 @@ export function ActivityFeed() {
     })),
   ].sort((a, b) => b.timestamp - a.timestamp);
 
+  // Deduplicate: prefer the "transaction" item if a matching "event" was also created
+  const seen = new Set<string>();
+  const deduped = activityItems.filter((item) => {
+    const key = `${item.type}-${item.id}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Activity className="h-5 w-5" />
-          Activity Feed
-        </CardTitle>
-        <CardDescription>
-          Real-time contract events and transaction updates
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" aria-hidden="true" />
+              Activity Feed
+            </CardTitle>
+            <CardDescription>
+              Real-time contract events and transaction updates, newest first
+            </CardDescription>
+          </div>
+          {events.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearEvents}
+              className="text-muted-foreground hover:text-destructive"
+              aria-label="Clear event feed"
+            >
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
-        {activityItems.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <Activity className="h-10 w-10 mx-auto mb-3 opacity-50" />
+        {deduped.length === 0 ? (
+          <div
+            className="text-center py-12 text-muted-foreground"
+            role="status"
+            aria-label="No activity yet"
+          >
+            <Activity
+              className="h-10 w-10 mx-auto mb-3 opacity-50"
+              aria-hidden="true"
+            />
             <p>No activity yet</p>
             <p className="text-sm mt-1">
-              Events and transactions will appear in real-time
+              Events and transactions will appear here in real-time
             </p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {activityItems.slice(0, 50).map((item) => (
-              <div
-                key={item.id + (item.type === "transaction" ? "-tx" : "")}
+          <ol
+            className="space-y-2"
+            aria-label="Activity feed"
+            aria-live="polite"
+            aria-relevant="additions"
+          >
+            {deduped.slice(0, 50).map((item) => (
+              <li
+                key={`${item.type}-${item.id}`}
                 className="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors"
               >
-                {/* Icon */}
-                <div className="shrink-0 mt-0.5">
+                {/* Status icon */}
+                <div className="shrink-0 mt-0.5" aria-hidden="true">
                   {item.type === "event" ? (
                     <Activity className="h-4 w-4 text-primary" />
-                  ) : item.type === "transaction" ? (
-                    item.status === "pending" ? (
-                      <Loader2 className="h-4 w-4 text-amber-500 animate-spin" />
-                    ) : item.status === "success" ? (
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                    ) : (
-                      <XCircle className="h-4 w-4 text-red-500" />
-                    )
-                  ) : null}
+                  ) : item.status === "pending" ? (
+                    <Loader2 className="h-4 w-4 text-amber-500 animate-spin" />
+                  ) : item.status === "success" ? (
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  ) : (
+                    <XCircle className="h-4 w-4 text-red-500" />
+                  )}
                 </div>
 
                 {/* Content */}
@@ -84,13 +133,15 @@ export function ActivityFeed() {
                       {item.action}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                    <span>{formatTimestamp(item.timestamp)}</span>
+                  <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground flex-wrap">
+                    <time dateTime={new Date(item.timestamp * 1000).toISOString()}>
+                      {formatTimestamp(item.timestamp)}
+                    </time>
                     {"wallet" in item && item.wallet && (
                       <>
-                        <span>·</span>
+                        <span aria-hidden="true">·</span>
                         <span className="font-mono">
-                          {shortenAddress(item.wallet!, 4)}
+                          {shortenAddress(item.wallet, 4)}
                         </span>
                       </>
                     )}
@@ -100,15 +151,16 @@ export function ActivityFeed() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="shrink-0"
+                        aria-label={`View transaction on Stellar Explorer`}
                       >
-                        <ExternalLink className="h-3 w-3 text-muted-foreground hover:text-primary" />
+                        <ExternalLink className="h-3 w-3 text-muted-foreground hover:text-primary transition-colors" />
                       </a>
                     )}
                   </div>
                 </div>
-              </div>
+              </li>
             ))}
-          </div>
+          </ol>
         )}
       </CardContent>
     </Card>

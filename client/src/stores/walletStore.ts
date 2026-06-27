@@ -35,10 +35,11 @@ export const useWalletStore = create<WalletState>()(
           address: "",
           isConnected: false,
           error: null,
+          isConnecting: false,
         }),
     }),
     {
-      name: "wallet-storage",
+      name: "leasenft-wallet-storage",
       partialize: (state) => ({
         address: state.address,
         network: state.network,

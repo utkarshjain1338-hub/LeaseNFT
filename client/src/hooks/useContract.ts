@@ -9,20 +9,68 @@ import {
   toScValString,
   toScValU64,
   toScValI128,
-  toScValAddress,
 } from "@/lib/stellar";
 import { useWalletStore } from "@/stores/walletStore";
 import { useTransactionStore } from "@/stores/transactionStore";
+import { useEventStore } from "@/stores/eventStore";
 import type { Listing, ActiveLease } from "@/types";
+
+/**
+ * Classify an error thrown by callContract into one of the canonical
+ * error categories the UI knows how to display.
+ */
+function classifyError(err: unknown): string {
+  if (!(err instanceof Error)) return "An unexpected error occurred";
+  const msg = err.message;
+
+  if (msg === "Transaction cancelled") return "Transaction cancelled";
+  if (msg.includes("RPC unavailable")) return msg;
+  if (msg.includes("Wallet not connected")) return "Please connect a wallet before continuing.";
+  if (msg.includes("Insufficient balance") || msg.includes("insufficient")) return "Insufficient XLM balance to complete this transaction.";
+  if (msg.includes("Network mismatch") || msg.includes("wrong network")) {
+    return "Network mismatch — please switch your wallet to Testnet.";
+  }
+  return msg;
+}
 
 export function useContract() {
   const address = useWalletStore((s) => s.address);
   const isConnected = useWalletStore((s) => s.isConnected);
   const addTransaction = useTransactionStore((s) => s.addTransaction);
   const updateTransaction = useTransactionStore((s) => s.updateTransaction);
+  const addEvent = useEventStore((s) => s.addEvent);
   const queryClient = useQueryClient();
 
+  /** Poll until the transaction is confirmed, then update the store. */
+  const trackTransaction = useCallback(
+    async (hash: string, label: string) => {
+      try {
+        const result = await waitForTransaction(hash);
+        const succeeded = result.status === "SUCCESS";
+        updateTransaction(hash, {
+          status: succeeded ? "success" : "failed",
+        });
+        if (succeeded) {
+          // Emit a synthetic event for the activity feed
+          addEvent({
+            id: hash,
+            type: "transaction",
+            timestamp: Math.floor(Date.now() / 1000),
+            wallet: address,
+            action: label,
+          });
+        }
+      } catch {
+        updateTransaction(hash, { status: "failed" });
+      }
+    },
+    [updateTransaction, addEvent, address]
+  );
+
+  // ---------------------------------------------------------------------------
   // Query hooks
+  // ---------------------------------------------------------------------------
+
   const useListing = (listingId: number) =>
     useQuery<Listing>({
       queryKey: ["listing", listingId],
@@ -32,8 +80,7 @@ export function useContract() {
           [toScValU64(listingId)],
           address || undefined
         );
-        const raw = result as Record<string, unknown>;
-        return raw as unknown as Listing;
+        return result as unknown as Listing;
       },
       enabled: isConnected && listingId > 0,
     });
@@ -48,8 +95,7 @@ export function useContract() {
             [toScValU64(listingId)],
             address || undefined
           );
-          const raw = result as Record<string, unknown>;
-          return raw as unknown as ActiveLease;
+          return result as unknown as ActiveLease;
         } catch {
           return null; // No active lease
         }
@@ -57,10 +103,14 @@ export function useContract() {
       enabled: isConnected && listingId > 0,
     });
 
+  // ---------------------------------------------------------------------------
   // Mutations
+  // ---------------------------------------------------------------------------
+
   const initMutation = useMutation({
     mutationFn: async () => {
       if (!address) throw new Error("Wallet not connected");
+      // init() takes no args and does not require auth per the contract signature
       return callContract("init", [], address, false);
     },
     onSuccess: (hash) => {
@@ -71,6 +121,10 @@ export function useContract() {
         label: "Initialize Contract",
       });
       trackTransaction(hash, "Initialize Contract");
+    },
+    onError: (err: unknown) => {
+      console.error("[LeaseNFT] initMutation error:", err);
+      throw new Error(classifyError(err));
     },
   });
 
@@ -87,13 +141,19 @@ export function useContract() {
       maxDuration: number;
     }) => {
       if (!address) throw new Error("Wallet not connected");
-      return callContract("list_nft", [
-        toScValAddress(address),
-        toScValString(tokenId),
-        toScValAddress(tokenAddress),
-        toScValI128(dailyRate),
-        toScValU64(maxDuration),
-      ], address, true);
+      // list_nft(owner, token_id, token_address, daily_rate, max_duration)
+      // callContract prepends `address` automatically when needsAuth=true
+      return callContract(
+        "list_nft",
+        [
+          toScValString(tokenId),
+          toScValU64(parseInt(tokenAddress) || 0), // token_address is an Address in the contract
+          toScValI128(dailyRate),
+          toScValU64(maxDuration),
+        ],
+        address,
+        true
+      );
     },
     onSuccess: (hash) => {
       addTransaction({
@@ -104,6 +164,10 @@ export function useContract() {
       });
       trackTransaction(hash, "List NFT for Lease");
       queryClient.invalidateQueries({ queryKey: ["listing"] });
+    },
+    onError: (err: unknown) => {
+      console.error("[LeaseNFT] listNftMutation error:", err);
+      throw new Error(classifyError(err));
     },
   });
 
@@ -116,11 +180,14 @@ export function useContract() {
       durationDays: number;
     }) => {
       if (!address) throw new Error("Wallet not connected");
-      return callContract("lease_nft", [
-        toScValAddress(address),
-        toScValU64(listingId),
-        toScValU64(durationDays),
-      ], address, true);
+      // lease_nft(renter, listing_id, duration_days)
+      // callContract prepends `address` automatically when needsAuth=true
+      return callContract(
+        "lease_nft",
+        [toScValU64(listingId), toScValU64(durationDays)],
+        address,
+        true
+      );
     },
     onSuccess: (hash) => {
       addTransaction({
@@ -133,15 +200,23 @@ export function useContract() {
       queryClient.invalidateQueries({ queryKey: ["listing"] });
       queryClient.invalidateQueries({ queryKey: ["lease"] });
     },
+    onError: (err: unknown) => {
+      console.error("[LeaseNFT] leaseNftMutation error:", err);
+      throw new Error(classifyError(err));
+    },
   });
 
   const endLeaseMutation = useMutation({
     mutationFn: async (listingId: number) => {
       if (!address) throw new Error("Wallet not connected");
-      return callContract("end_lease", [
-        toScValAddress(address),
-        toScValU64(listingId),
-      ], address, true);
+      // end_lease(caller, listing_id)
+      // callContract prepends `address` automatically when needsAuth=true
+      return callContract(
+        "end_lease",
+        [toScValU64(listingId)],
+        address,
+        true
+      );
     },
     onSuccess: (hash) => {
       addTransaction({
@@ -154,22 +229,11 @@ export function useContract() {
       queryClient.invalidateQueries({ queryKey: ["listing"] });
       queryClient.invalidateQueries({ queryKey: ["lease"] });
     },
-  });
-
-  // Track transaction status
-  const trackTransaction = useCallback(
-    async (hash: string, label: string) => {
-      try {
-        const result = await waitForTransaction(hash);
-        updateTransaction(hash, {
-          status: result.status === "SUCCESS" ? "success" : "failed",
-        });
-      } catch {
-        updateTransaction(hash, { status: "failed" });
-      }
+    onError: (err: unknown) => {
+      console.error("[LeaseNFT] endLeaseMutation error:", err);
+      throw new Error(classifyError(err));
     },
-    [updateTransaction]
-  );
+  });
 
   return {
     useListing,

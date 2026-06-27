@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import type { ContractEvent } from "@/types";
 
 interface EventState {
@@ -8,15 +9,27 @@ interface EventState {
   clearEvents: () => void;
 }
 
-export const useEventStore = create<EventState>()((set) => ({
-  events: [],
+export const useEventStore = create<EventState>()(
+  persist(
+    (set) => ({
+      events: [],
 
-  addEvent: (event) =>
-    set((state) => ({
-      events: [event, ...state.events].slice(0, 200), // keep last 200
-    })),
+      addEvent: (event) =>
+        set((state) => {
+          // Deduplicate by ID — never add the same event twice
+          if (state.events.some((e) => e.id === event.id)) return state;
+          return {
+            events: [event, ...state.events].slice(0, 200),
+          };
+        }),
 
-  setEvents: (events) => set({ events }),
+      setEvents: (events) => set({ events }),
 
-  clearEvents: () => set({ events: [] }),
-}));
+      clearEvents: () => set({ events: [] }),
+    }),
+    {
+      name: "leasenft-events",
+      partialize: (state) => ({ events: state.events }),
+    }
+  )
+);

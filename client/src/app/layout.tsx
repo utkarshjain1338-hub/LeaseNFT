@@ -7,17 +7,27 @@ import { Providers } from "@/lib/providers";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "LeaseNFT - NFT Leasing Platform on Stellar",
+  title: "LeaseNFT — NFT Leasing Platform on Stellar Soroban",
   description:
-    "A permissionless NFT leasing platform built on Stellar Soroban. List, lease, and manage NFT rentals on the Stellar blockchain.",
+    "A permissionless NFT leasing platform built on Stellar Soroban. List NFTs for lease, rent them by the day, and track everything on-chain with smart contracts.",
+  keywords: ["Stellar", "Soroban", "NFT", "leasing", "blockchain", "smart contract"],
+  authors: [{ name: "LeaseNFT" }],
+  openGraph: {
+    title: "LeaseNFT — NFT Leasing on Stellar",
+    description:
+      "List, lease, and manage NFT rentals on the Stellar blockchain with Soroban smart contracts.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -32,9 +42,21 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-screen flex flex-col">
+        {/* Skip-to-content for screen readers */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-primary focus:text-primary-foreground focus:px-4 focus:py-2 focus:text-sm font-medium"
+        >
+          Skip to main content
+        </a>
+
         <Providers>
           <Navbar />
-          <main className="flex-1 container mx-auto px-4 py-8">
+          <main
+            id="main-content"
+            className="flex-1 container mx-auto px-4 py-8"
+            tabIndex={-1}
+          >
             {children}
           </main>
           <footer className="border-t py-6 text-center text-sm text-muted-foreground">
@@ -45,6 +67,7 @@ export default function RootLayout({
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline underline-offset-4 hover:text-primary"
+                aria-label="Stellar blockchain (opens in new tab)"
               >
                 Stellar
               </a>{" "}
