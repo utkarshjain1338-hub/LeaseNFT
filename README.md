@@ -16,6 +16,7 @@ LeaseNFT is a full-stack dApp on Stellar Soroban that allows NFT owners to monet
 ## Features
 
 - **📜 Smart Contract** — Custom Soroban contract for listing, leasing, and managing NFT rentals
+- **🔍 Automated Discovery** — Automatically queries and discovers all active/historical listings directly from on-chain state via `get_listing_count()`
 - **🔗 Multi-Wallet Support** — Connect with Freighter, Albedo, LOBSTR, xBull, Rabet, Hana, WalletConnect
 - **💳 Wallet Persistence** — Reconnects automatically after page refresh
 - **📊 Dashboard** — View balances, transaction history, and contract events
@@ -237,6 +238,7 @@ CA3Z2A63KCHNDB37NDWEBJ6ACFXKIOGT3FVRD7FFX36MD2UYINAN5F6X
 | `end_lease(caller, listing_id)` | Address, u64 | Yes (owner or renter) | — |
 | `get_listing(listing_id)` | u64 | No | `Listing` struct |
 | `get_lease(listing_id)` | u64 | No | `ActiveLease` struct |
+| `get_listing_count()` | — | No | `u64` total count of listings |
 
 ### Structs
 
@@ -323,16 +325,6 @@ Pending → Submitting → Confirmed → Explorer Link
 | `screenshots/contract-app.png` | Contract interaction page (List, Lease, End, Query) |
 | `screenshots/activity-feed.png` | Activity feed with real-time events and tx status |
 | `screenshots/transaction-success.png` | Successful transaction with explorer link |
-
----
-
-## Contract Address
-
-```
-CA3Z2A63KCHNDB37NDWEBJ6ACFXKIOGT3FVRD7FFX36MD2UYINAN5F6X
-```
-
-> Replace with your deployed contract address if redeploying to a fresh testnet account.
 
 ---
 
