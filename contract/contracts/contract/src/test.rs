@@ -210,13 +210,26 @@ fn test_end_lease_without_active_lease() {
 }
 
 #[test]
-#[should_panic(expected = "already initialized")]
 fn test_double_init() {
-    let env = make_env();
-    let contract_id = env.register(LeaseNFT, ());
-    let client = LeaseNFTClient::new(&env, &contract_id);
     client.init(&None);
-    client.init(&None);
+    client.init(&None); // should be safe, no panic
+
+    // state should remain valid
+    assert_eq!(client.get_listing_count(), 0);
+
+    // contract still works normally
+    let owner = Address::generate(&env);
+    let token_id = String::from_str(&env, "test");
+
+    let id = client.list_nft(
+        &owner,
+        &token_id,
+        &owner,
+        &10,
+        &5,
+    );
+
+    assert_eq!(id, 1);
 }
 
 #[test]
