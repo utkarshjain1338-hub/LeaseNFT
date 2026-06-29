@@ -278,31 +278,31 @@ ContractError
 ## 📸 Screenshots
 
 ### 🏠 Home Page
-![Home Page](./screenshots/Home-screen.png)
+![Home Page](./Screenshots/Home-screen.png)
 
 ### 📱 Mobile Responsive View
-![Mobile Home](./screenshots/mobile-view.png)
+![Mobile Home](./Screenshots/mobile-view.png)
 
 ### 🔗 Wallet Connected
-![Wallet](./screenshots/Dashboard.png)
+![Wallet](./Screenshots/Dashboard.png)
 
 ### 🧾 NFT Listing
-![List NFT](./screenshots/app.png)
+![List NFT](./Screenshots/app.png)
 
 ### ⚡ Lease Success
-![Lease Success](./screenshots/lease-listed.png)
+![Lease Success](./Screenshots/lease-listed.png)
 
 ### ✅ CI Pipeline
-![CI](./screenshots/ci-passing.png)
+![CI](./Screenshots/ci-passing.png)
 
 ### Stellar Page
-![hash](./screenshots/stellar-page-transcation-hash.png)
+![hash](./Screenshots/stellar-page-transcation-hash.png)
 
 ### Activity
-![activity](./screenshots/Activity.png)
+![activity](./Screenshots/Activity.png)
 
 ### Transaction history
-![history](./screenshots/Transactions.png)
+![history](./Screenshots/Transactions.png)
 
 ---
 
