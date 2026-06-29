@@ -18,7 +18,7 @@ NETWORK="${NETWORK:-testnet}"
 RPC_URL="${RPC_URL:-https://soroban-testnet.stellar.org}"
 NETWORK_PASSPHRASE="${NETWORK_PASSPHRASE:-Test SDF Network ; September 2015}"
 CONTRACT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../contract" && pwd)"
-WASM_PATH="${CONTRACT_DIR}/target/wasm32-unknown-unknown/release/treasury.wasm"
+WASM_PATH="${CONTRACT_DIR}/target/wasm32-none/release/treasury.wasm"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -34,7 +34,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 
 echo ""
 echo "▶ Step 1: Building WASM..."
-(cd "${CONTRACT_DIR}" && cargo build --target wasm32-unknown-unknown --release -p treasury)
+(cd "${CONTRACT_DIR}" && stellar contract build)
 echo "  ✓ Built: ${WASM_PATH}"
 
 echo ""
