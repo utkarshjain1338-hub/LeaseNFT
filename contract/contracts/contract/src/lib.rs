@@ -52,7 +52,6 @@ impl LeaseNFT {
     /// This prevents the WASM `UnreachableCodeReached` trap that `panic!` would cause.
     /// If a treasury address is provided it is registered for cross-contract fee
     /// forwarding in `lease_nft`.
-
     pub fn init(env: Env, treasury: Option<Address>) {
         // Guard: if already initialized, return silently (idempotent).
         // Using panic!() here would produce Error(WasmVm, InvalidAction) /
