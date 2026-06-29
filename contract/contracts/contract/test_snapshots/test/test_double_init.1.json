@@ -205,6 +205,9 @@
           "v0": {
             "topics": [
               {
+                "symbol": "lease_nft_listed_event"
+              },
+              {
                 "symbol": "leasenft"
               },
               {
@@ -212,21 +215,46 @@
               }
             ],
             "data": {
-              "vec": [
+              "map": [
                 {
-                  "u64": "1"
+                  "key": {
+                    "symbol": "daily_rate"
+                  },
+                  "val": {
+                    "i128": "10"
+                  }
                 },
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                  "key": {
+                    "symbol": "listing_id"
+                  },
+                  "val": {
+                    "u64": "1"
+                  }
                 },
                 {
-                  "string": "test"
+                  "key": {
+                    "symbol": "max_duration"
+                  },
+                  "val": {
+                    "u64": "5"
+                  }
                 },
                 {
-                  "i128": "10"
+                  "key": {
+                    "symbol": "owner"
+                  },
+                  "val": {
+                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                  }
                 },
                 {
-                  "u64": "5"
+                  "key": {
+                    "symbol": "token_id"
+                  },
+                  "val": {
+                    "string": "test"
+                  }
                 }
               ]
             }

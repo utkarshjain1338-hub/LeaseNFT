@@ -1,18 +1,52 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, Symbol};
+use soroban_sdk::{
+    contract, contractevent, contractimpl, contracttype, symbol_short, Address, Env, Symbol,
+};
 
-const ADMIN_KEY: Symbol = symbol_short!("ADMIN");
-const BALANCE_KEY: Symbol = symbol_short!("BALANCE");
+#[contractevent]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TreasuryInitEvent {
+    #[topic]
+    pub treasury: Symbol,
+    #[topic]
+    pub init: Symbol,
+    pub admin: Address,
+}
+
+#[contractevent]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TreasuryDepositEvent {
+    #[topic]
+    pub treasury: Symbol,
+    #[topic]
+    pub deposit: Symbol,
+    pub data: FeeDeposited,
+}
+
+#[contractevent]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TreasuryWithdrawEvent {
+    #[topic]
+    pub treasury: Symbol,
+    #[topic]
+    pub withdraw: Symbol,
+    pub admin: Address,
+    pub amount: i128,
+    pub new_balance: i128,
+}
 
 /// Deposit event data emitted on each fee deposit.
 #[contracttype]
-#[derive(Clone)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FeeDeposited {
     pub from_contract: Address,
     pub listing_id: u64,
     pub amount: i128,
     pub ledger: u32,
 }
+
+const ADMIN_KEY: Symbol = symbol_short!("ADMIN");
+const BALANCE_KEY: Symbol = symbol_short!("BALANCE");
 
 #[contract]
 pub struct Treasury;
@@ -28,8 +62,12 @@ impl Treasury {
         admin.require_auth();
         env.storage().instance().set(&ADMIN_KEY, &admin);
         env.storage().instance().set(&BALANCE_KEY, &0i128);
-        env.events()
-            .publish((symbol_short!("treasury"), symbol_short!("init")), admin);
+        TreasuryInitEvent {
+            treasury: symbol_short!("treasury"),
+            init: symbol_short!("init"),
+            admin,
+        }
+        .publish(&env);
     }
 
     /// Deposit a lease fee into the treasury.
@@ -57,15 +95,17 @@ impl Treasury {
             .set(&BALANCE_KEY, &(current + amount));
 
         // Emit a fee_deposited event for indexers and the frontend
-        env.events().publish(
-            (symbol_short!("treasury"), symbol_short!("deposit")),
-            FeeDeposited {
+        TreasuryDepositEvent {
+            treasury: symbol_short!("treasury"),
+            deposit: symbol_short!("deposit"),
+            data: FeeDeposited {
                 from_contract,
                 listing_id,
                 amount,
                 ledger: env.ledger().sequence(),
             },
-        );
+        }
+        .publish(&env);
     }
 
     /// Withdraw accumulated fees. Only callable by the admin.
@@ -90,10 +130,14 @@ impl Treasury {
         let new_balance = balance - amount;
         env.storage().instance().set(&BALANCE_KEY, &new_balance);
 
-        env.events().publish(
-            (symbol_short!("treasury"), symbol_short!("withdraw")),
-            (admin, amount, new_balance),
-        );
+        TreasuryWithdrawEvent {
+            treasury: symbol_short!("treasury"),
+            withdraw: symbol_short!("withdraw"),
+            admin,
+            amount,
+            new_balance,
+        }
+        .publish(&env);
 
         new_balance
     }

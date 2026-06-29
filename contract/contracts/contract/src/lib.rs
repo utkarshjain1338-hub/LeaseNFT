@@ -1,8 +1,56 @@
 #![no_std]
 use soroban_sdk::{
-    contract, contractclient, contractimpl, contracttype, symbol_short, Address, Env, String,
-    Symbol,
+    contract, contractclient, contractevent, contractimpl, contracttype, symbol_short, Address,
+    Env, String, Symbol,
 };
+
+#[contractevent]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct LeaseNFTInitEvent {
+    #[topic]
+    pub leasenft: Symbol,
+    #[topic]
+    pub init: Symbol,
+    pub contract_address: Address,
+}
+
+#[contractevent]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct LeaseNFTListedEvent {
+    #[topic]
+    pub leasenft: Symbol,
+    #[topic]
+    pub listed: Symbol,
+    pub listing_id: u64,
+    pub owner: Address,
+    pub token_id: String,
+    pub daily_rate: i128,
+    pub max_duration: u64,
+}
+
+#[contractevent]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct LeaseNFTLeasedEvent {
+    #[topic]
+    pub leasenft: Symbol,
+    #[topic]
+    pub leased: Symbol,
+    pub listing_id: u64,
+    pub renter: Address,
+    pub duration_days: u64,
+    pub total_fee: i128,
+}
+
+#[contractevent]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct LeaseNFTEndedEvent {
+    #[topic]
+    pub leasenft: Symbol,
+    #[topic]
+    pub ended: Symbol,
+    pub listing_id: u64,
+    pub caller: Address,
+}
 
 const COUNT_KEY: Symbol = symbol_short!("COUNT");
 const TREASURY_KEY: Symbol = symbol_short!("TREASURY");
@@ -63,10 +111,12 @@ impl LeaseNFT {
         if let Some(addr) = treasury {
             env.storage().instance().set(&TREASURY_KEY, &addr);
         }
-        env.events().publish(
-            (symbol_short!("leasenft"), symbol_short!("init")),
-            (env.current_contract_address(),),
-        );
+        LeaseNFTInitEvent {
+            leasenft: symbol_short!("leasenft"),
+            init: symbol_short!("init"),
+            contract_address: env.current_contract_address(),
+        }
+        .publish(&env);
     }
 
     /// List an NFT for lease. Returns the new listing ID.
@@ -94,10 +144,16 @@ impl LeaseNFT {
             },
         );
         // Emit listing created event
-        env.events().publish(
-            (symbol_short!("leasenft"), symbol_short!("listed")),
-            (count, owner, token_id, daily_rate, max_duration),
-        );
+        LeaseNFTListedEvent {
+            leasenft: symbol_short!("leasenft"),
+            listed: symbol_short!("listed"),
+            listing_id: count,
+            owner,
+            token_id,
+            daily_rate,
+            max_duration,
+        }
+        .publish(&env);
         count
     }
 
@@ -136,10 +192,15 @@ impl LeaseNFT {
         );
 
         // Emit lease event
-        env.events().publish(
-            (symbol_short!("leasenft"), symbol_short!("leased")),
-            (listing_id, renter.clone(), duration_days, total_fee),
-        );
+        LeaseNFTLeasedEvent {
+            leasenft: symbol_short!("leasenft"),
+            leased: symbol_short!("leased"),
+            listing_id,
+            renter: renter.clone(),
+            duration_days,
+            total_fee,
+        }
+        .publish(&env);
 
         // ─── Inter-contract communication ──────────────────────────────────
         // If a Treasury contract was registered during init(), forward the fee
@@ -189,10 +250,13 @@ impl LeaseNFT {
             .set(&DataKey::Listing(listing_id), &listing);
 
         // Emit end_lease event
-        env.events().publish(
-            (symbol_short!("leasenft"), symbol_short!("ended")),
-            (listing_id, caller),
-        );
+        LeaseNFTEndedEvent {
+            leasenft: symbol_short!("leasenft"),
+            ended: symbol_short!("ended"),
+            listing_id,
+            caller,
+        }
+        .publish(&env);
     }
 
     /// Get listing details.
