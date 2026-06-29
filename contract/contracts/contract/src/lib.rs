@@ -65,7 +65,7 @@ impl LeaseNFT {
         }
         env.events().publish(
             (symbol_short!("leasenft"), symbol_short!("init")),
-            env.ledger().sequence(),
+            (env.current_contract_address(),),
         );
     }
 
@@ -151,7 +151,7 @@ impl LeaseNFT {
             .get::<Symbol, Address>(&TREASURY_KEY)
         {
             let treasury = TreasuryClient::new(&env, &treasury_id);
-            treasury.deposit_fee(&env.current_contract_address(), &listing_id, &total_fee);
+            treasury.deposit_fee(&env,&env.current_contract_address(), &listing_id, &total_fee);
         }
     }
 
