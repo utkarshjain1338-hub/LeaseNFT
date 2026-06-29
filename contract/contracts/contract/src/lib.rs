@@ -152,10 +152,9 @@ impl LeaseNFT {
         {
             let treasury = TreasuryClient::new(&env, &treasury_id);
             treasury.deposit_fee(
-                &env,
                 &env.current_contract_address(),
-                &listing_id,
-                &total_fee,
+                listing_id,
+                total_fee,
             );
         }
     }
