@@ -2,8 +2,8 @@
 
 > A production-grade, permissionless NFT leasing dApp built with Rust/Soroban smart contracts and a Next.js frontend. Built for the Stellar Orange Belt certification.
 
-[![Contract CI](https://github.com/yourusername/LeaseNFT/actions/workflows/contract.yml/badge.svg)](https://github.com/yourusername/LeaseNFT/actions/workflows/contract.yml)
-[![Frontend CI](https://github.com/yourusername/LeaseNFT/actions/workflows/frontend.yml/badge.svg)](https://github.com/yourusername/LeaseNFT/actions/workflows/frontend.yml)
+[![Contract CI](https://github.com/utkarshjain1338-hub/LeaseNFT/actions/workflows/contract.yml/badge.svg)](https://github.com/utkarshjain1338-hub/LeaseNFT/actions/workflows/contract.yml)
+[![Frontend CI](https://github.com/utkarshjain1338-hub/LeaseNFT/actions/workflows/frontend.yml/badge.svg)](https://github.com/utkarshjain1338-hub/LeaseNFT/actions/workflows/frontend.yml)
 
 ---
 
@@ -303,6 +303,11 @@ ContractError
 
 ### Transaction history
 ![history](./Screenshots/Transactions.png)
+
+---
+
+## 📸 Video DEMO
+![Video-Demo](https://drive.google.com/file/d/1K7nQMTwNrAvi63AH0B4eqAQ7KxwF3CnU/view?usp=drivesdk)
 
 ---
 
