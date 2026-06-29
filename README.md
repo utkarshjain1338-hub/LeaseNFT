@@ -307,7 +307,7 @@ ContractError
 ---
 
 ## 📸 Video DEMO
-![Video-Demo](https://drive.google.com/file/d/1K7nQMTwNrAvi63AH0B4eqAQ7KxwF3CnU/view?usp=drivesdk)
+[Video-Demo](https://drive.google.com/file/d/1K7nQMTwNrAvi63AH0B4eqAQ7KxwF3CnU/view?usp=drivesdk)
 
 ---
 
