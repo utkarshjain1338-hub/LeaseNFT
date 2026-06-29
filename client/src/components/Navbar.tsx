@@ -27,7 +27,6 @@ export function Navbar() {
     network,
     walletModalOpen,
     setWalletModalOpen,
-    connect,
     disconnect,
   } = useWallet();
   const [mobileOpen, setMobileOpen] = useState(false);

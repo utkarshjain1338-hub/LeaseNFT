@@ -32,12 +32,7 @@ export function useWallet() {
 
   const [balance, setBalance] = useState<string | null>(null);
   const [walletModalOpen, setWalletModalOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const reconnectAttempted = useRef(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // ---------------------------------------------------------------------------
   // Balance fetch
@@ -221,13 +216,13 @@ export function useWallet() {
   }, [isConnected, address, setAddress, refreshBalance]);
 
   return {
-    address: mounted ? address : "",
-    network: mounted ? network : "testnet",
-    isConnected: mounted ? isConnected : false,
+    address: address || "",
+    network: network || "testnet",
+    isConnected: isConnected || false,
     isConnecting,
     error,
-    balance: mounted ? balance : null,
-    mounted,
+    balance,
+    mounted: true,
     walletModalOpen,
     setWalletModalOpen,
     connect,
