@@ -61,6 +61,16 @@ See [docs/architecture.md](docs/architecture.md) for the full system diagram.
 
 ---
 
+## Contract Addresses (Testnet)
+
+LeaseNFT Contract:
+CAK2667O5DDJTDLCAMCR4OOUG6DCA4BCOLFRWRDBF5RIPYM2BVTG5KSD
+
+Treasury Contract:
+CAOR34Q7QMWJV4HANB62BX47ABNK2C4FB7HRDLYZ22Y253K557UKBD2J
+
+---
+
 ## Quick Start
 
 ### Prerequisites
@@ -84,9 +94,20 @@ export STELLAR_SECRET_KEY=SXXXXXXXXXX
 
 # Optional: deploy Treasury first
 bash scripts/deploy_treasury.sh
+#or
+stellar contract deploy \                   
+ --wasm target/wasm32v1-none/release/treasury.wasm \
+ --source dev \
+ --network testnet
 
 # Deploy LeaseNFT (with treasury)
 bash scripts/deploy_contract.sh --treasury <TREASURY_ID>
+
+#or
+stellar contract deploy \                                 
+--wasm target/wasm32v1-none/release/lease_nft.wasm \
+--source dev \
+--network testnet
 ```
 
 ### 3. Run Frontend
