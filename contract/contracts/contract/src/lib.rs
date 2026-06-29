@@ -109,7 +109,10 @@ impl LeaseNFT {
             .get(&DataKey::Listing(listing_id))
             .expect("listing not found");
         assert!(listing.active, "listing is not active");
-        assert!(duration_days <= listing.max_duration, "duration exceeds max");
+        assert!(
+            duration_days <= listing.max_duration,
+            "duration exceeds max"
+        );
 
         let now = env.ledger().timestamp();
         let total_fee = listing.daily_rate * (duration_days as i128);

@@ -28,10 +28,8 @@ impl Treasury {
         admin.require_auth();
         env.storage().instance().set(&ADMIN_KEY, &admin);
         env.storage().instance().set(&BALANCE_KEY, &0i128);
-        env.events().publish(
-            (symbol_short!("treasury"), symbol_short!("init")),
-            admin,
-        );
+        env.events()
+            .publish((symbol_short!("treasury"), symbol_short!("init")), admin);
     }
 
     /// Deposit a lease fee into the treasury.
@@ -53,11 +51,7 @@ impl Treasury {
             panic!("not initialized");
         }
 
-        let current: i128 = env
-            .storage()
-            .instance()
-            .get(&BALANCE_KEY)
-            .unwrap_or(0i128);
+        let current: i128 = env.storage().instance().get(&BALANCE_KEY).unwrap_or(0i128);
         env.storage()
             .instance()
             .set(&BALANCE_KEY, &(current + amount));
@@ -88,11 +82,7 @@ impl Treasury {
             panic!("unauthorized");
         }
 
-        let balance: i128 = env
-            .storage()
-            .instance()
-            .get(&BALANCE_KEY)
-            .unwrap_or(0i128);
+        let balance: i128 = env.storage().instance().get(&BALANCE_KEY).unwrap_or(0i128);
         if amount > balance {
             panic!("insufficient balance");
         }
@@ -110,10 +100,7 @@ impl Treasury {
 
     /// Get the current treasury balance (total fees deposited minus withdrawals).
     pub fn get_balance(env: Env) -> i128 {
-        env.storage()
-            .instance()
-            .get(&BALANCE_KEY)
-            .unwrap_or(0i128)
+        env.storage().instance().get(&BALANCE_KEY).unwrap_or(0i128)
     }
 
     /// Get the admin address.

@@ -62,13 +62,7 @@ fn test_full_lease_lifecycle() {
     client.init(&None);
     assert_eq!(client.get_listing_count(), 0);
 
-    let listing_id = client.list_nft(
-        &owner,
-        &token_id,
-        &token_addr,
-        &daily_rate,
-        &max_duration,
-    );
+    let listing_id = client.list_nft(&owner, &token_id, &token_addr, &daily_rate, &max_duration);
     assert_eq!(listing_id, 1);
     assert_eq!(client.get_listing_count(), 1);
 
@@ -351,7 +345,7 @@ fn test_multiple_concurrent_listings_and_leases() {
     assert!(!client.get_listing(&lid1).active);
     assert!(!client.get_listing(&lid3).active);
 
-    assert_eq!(client.get_lease(&lid1).total_fee, 30);  // 10 * 3
+    assert_eq!(client.get_lease(&lid1).total_fee, 30); // 10 * 3
     assert_eq!(client.get_lease(&lid3).total_fee, 210); // 30 * 7
 }
 
