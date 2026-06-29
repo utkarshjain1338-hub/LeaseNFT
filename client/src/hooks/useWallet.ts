@@ -6,6 +6,7 @@ import { getNetworkConfig } from "@/lib/config";
 import { StellarWalletsKit } from "@creit.tech/stellar-wallets-kit/sdk";
 import { KitEventType } from "@creit.tech/stellar-wallets-kit/types";
 import { useWalletStore } from "@/stores/walletStore";
+import { requestAccess } from "@stellar/freighter-api";
 
 // Horizon endpoint helpers
 function getHorizonUrl(network: string): string {
@@ -31,7 +32,12 @@ export function useWallet() {
 
   const [balance, setBalance] = useState<string | null>(null);
   const [walletModalOpen, setWalletModalOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const reconnectAttempted = useRef(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // ---------------------------------------------------------------------------
   // Balance fetch
@@ -69,32 +75,44 @@ export function useWallet() {
   //   call authModal(). Only set isConnecting AFTER the SDK modal returns (i.e.
   //   after the user actually picks a wallet), not before.
   // ---------------------------------------------------------------------------
-  const connect = useCallback(async (closeOurModal: () => void) => {
-    // 1. Close the Radix dialog immediately so hideOthers() gets undone.
-    closeOurModal();
+  const connect = useCallback(async (closeOurModal?: () => void, targetWalletId?: string) => {
+    if (isConnecting) return; // Prevent multiple rapid clicks
 
-    // 2. Wait two rAF ticks — enough for Radix to flush its cleanup:
-    //    first tick: React state update processed, Dialog begins unmounting
-    //    second tick: aria-hidden reverted, RemoveScroll unmounted, scroll restored
-    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    if (closeOurModal) {
+      closeOurModal();
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    }
 
-    // 3. Ensure the kit is initialized (idempotent).
     ensureKit();
-    console.info("[LeaseNFT] Opening StellarWalletsKit authModal…");
-
-    // 4. Now isConnecting starts — from this point, the SDK modal is live.
     setConnecting(true);
     setError(null);
 
     try {
       const expectedNetwork = getNetworkConfig().network;
+      let walletAddress = "";
 
-      const result = await StellarWalletsKit.authModal();
-      const { address: walletAddress } = result;
+      if (targetWalletId === "freighter") {
+        const isInstalled = typeof window !== "undefined" && ("freighterApi" in window || "freighter" in window);
+        if (!isInstalled) {
+          throw new Error("Freighter wallet not installed. Please install the Freighter browser extension.");
+        }
+        console.info("[LeaseNFT] Connecting directly to Freighter...");
+        const accessResult = await requestAccess();
+        if (accessResult.error) {
+          throw accessResult.error;
+        }
+        walletAddress = accessResult.address;
+        StellarWalletsKit.setWallet("freighter");
+      } else if (targetWalletId) {
+        StellarWalletsKit.setWallet(targetWalletId);
+        const res = await StellarWalletsKit.fetchAddress();
+        walletAddress = res?.address;
+      } else {
+        console.info("[LeaseNFT] Opening StellarWalletsKit authModal…");
+        const res = await StellarWalletsKit.authModal();
+        walletAddress = res?.address;
+      }
 
-      console.info("[LeaseNFT] authModal resolved, address:", walletAddress?.slice(0, 8) + "…");
-
-      // Validate the returned address
       if (!walletAddress || walletAddress.length < 56) {
         throw new Error("Invalid wallet address returned");
       }
@@ -103,11 +121,6 @@ export function useWallet() {
       setNetwork(expectedNetwork);
       setConnected(true);
     } catch (err: unknown) {
-      // StellarWalletsKit throws plain objects (not Error instances) in several
-      // cases. When the user closes the modal it throws:
-      //   { code: -1, message: "The user closed the modal." }
-      // We must not assume `err instanceof Error`.
-
       let msg = "Wallet connection failed";
       if (err instanceof Error) {
         msg = err.message;
@@ -126,19 +139,19 @@ export function useWallet() {
         msg = err;
       }
 
-      console.error("[LeaseNFT] authModal error:", { message: msg, raw: err });
+      console.error("[LeaseNFT] connect error:", { message: msg, raw: err });
 
       const isUserDismiss =
         msg.includes("closed the modal") ||
         msg.includes("User cancelled") ||
+        msg.includes("User declined") ||
         msg.includes("rejected") ||
         msg.includes("declined");
 
       if (isUserDismiss) {
-        // Silent — user intentionally dismissed; no error to display
-        setError(null);
+        setError("Connection rejected by user.");
       } else if (msg.includes("not found") || msg.includes("not installed")) {
-        setError("Wallet not found. Please install Freighter or another Stellar wallet.");
+        setError("Freighter wallet not installed. Please install the browser extension.");
       } else if (msg.includes("wrong network") || msg.includes("Network mismatch")) {
         setError("Network mismatch — please switch your wallet to Stellar Testnet.");
       } else if (msg.includes("Invalid wallet address")) {
@@ -149,7 +162,7 @@ export function useWallet() {
     } finally {
       setConnecting(false);
     }
-  }, [setAddress, setNetwork, setConnected, setConnecting, setError]);
+  }, [isConnecting, setAddress, setNetwork, setConnected, setConnecting, setError]);
 
   // ---------------------------------------------------------------------------
   // Disconnect
@@ -208,12 +221,13 @@ export function useWallet() {
   }, [isConnected, address, setAddress, refreshBalance]);
 
   return {
-    address,
-    network,
-    isConnected,
+    address: mounted ? address : "",
+    network: mounted ? network : "testnet",
+    isConnected: mounted ? isConnected : false,
     isConnecting,
     error,
-    balance,
+    balance: mounted ? balance : null,
+    mounted,
     walletModalOpen,
     setWalletModalOpen,
     connect,

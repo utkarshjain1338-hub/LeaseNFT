@@ -47,12 +47,18 @@ pub struct LeaseNFT;
 impl LeaseNFT {
     /// Initialize the contract listing counter.
     ///
-    /// - `treasury`: Optional address of the Treasury contract. When set,
-    ///   `lease_nft` will call `Treasury.deposit_fee()` for every new lease
-    ///   as cross-contract inter-contract communication.
+    /// Idempotent — safe to call multiple times. Returns immediately without
+    /// overwriting state if the contract is already initialized.
+    /// This prevents the WASM `UnreachableCodeReached` trap that `panic!` would cause.
+    /// If a treasury address is provided it is registered for cross-contract fee
+    /// forwarding in `lease_nft`.
+
     pub fn init(env: Env, treasury: Option<Address>) {
+        // Guard: if already initialized, return silently (idempotent).
+        // Using panic!() here would produce Error(WasmVm, InvalidAction) /
+        // UnreachableCodeReached in the Soroban VM — we return instead.
         if env.storage().instance().has(&COUNT_KEY) {
-            panic!("already initialized");
+            return;
         }
         env.storage().instance().set(&COUNT_KEY, &0u64);
         if let Some(addr) = treasury {

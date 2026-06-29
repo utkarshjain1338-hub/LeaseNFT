@@ -299,16 +299,26 @@ export function Contract() {
             </CardTitle>
             <CardDescription>
               Initialize the contract (one-time setup after deployment).
+              {initMutation.isSuccess && (
+                <span className="block text-emerald-500 dark:text-emerald-400 mt-1 text-xs font-medium">
+                  ✓ Contract initialized successfully.
+                </span>
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
+            {/* Disabled permanently after first success to prevent double-init */}
             <Button
               id="btn-init"
               onClick={handleInit}
-              disabled={isAnyLoading}
+              disabled={isAnyLoading || initMutation.isSuccess}
               className="w-full"
-              variant="secondary"
-              aria-label="Initialize the LeaseNFT contract"
+              variant={initMutation.isSuccess ? "outline" : "secondary"}
+              aria-label={
+                initMutation.isSuccess
+                  ? "Contract already initialized"
+                  : "Initialize the LeaseNFT contract"
+              }
               aria-busy={initMutation.isPending}
             >
               {initMutation.isPending ? (
@@ -316,6 +326,8 @@ export function Contract() {
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                   Initializing…
                 </>
+              ) : initMutation.isSuccess ? (
+                "Already Initialized ✓"
               ) : (
                 "Initialize Contract"
               )}

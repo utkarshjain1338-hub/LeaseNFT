@@ -27,6 +27,7 @@ export function Navbar() {
     network,
     walletModalOpen,
     setWalletModalOpen,
+    connect,
     disconnect,
   } = useWallet();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -189,7 +190,7 @@ export function Navbar() {
               <div className="pt-2 space-y-2">
                 <Badge
                   variant="outline"
-                  className="font-mono text-xs w-full justify-center py-1"
+                  className="font-mono text-xs w-full justify-center py-1 truncate block text-center"
                   aria-label={`Connected wallet: ${address}`}
                 >
                   {shortenAddress(address)}
@@ -197,7 +198,7 @@ export function Navbar() {
                 {balance && (
                   <Badge
                     variant="secondary"
-                    className="w-full justify-center py-1"
+                    className="w-full justify-center py-1 truncate block text-center"
                     aria-label={`Balance: ${parseFloat(balance).toFixed(2)} XLM`}
                   >
                     {parseFloat(balance).toFixed(2)} XLM

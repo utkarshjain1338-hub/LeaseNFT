@@ -69,6 +69,7 @@ export function WalletModal({ open, onOpenChange }: WalletModalProps) {
     address,
     network,
     isConnected,
+    isConnecting,
     balance,
     error,
     connect,
@@ -95,8 +96,8 @@ export function WalletModal({ open, onOpenChange }: WalletModalProps) {
    * - Do NOT disable the buttons with isConnecting — loading state only begins
    *   after the SDK modal is open, so there is no "pending" state in this dialog.
    */
-  const handleWalletClick = () => {
-    connect(() => onOpenChange(false));
+  const handleWalletClick = (walletId: string) => {
+    connect(() => onOpenChange(false), walletId);
   };
 
   return (
@@ -193,8 +194,9 @@ export function WalletModal({ open, onOpenChange }: WalletModalProps) {
                   key={wallet.id}
                   id={`wallet-option-${wallet.id}`}
                   variant="outline"
+                  disabled={isConnecting}
                   className="flex items-center justify-between px-4 py-5 h-auto text-base hover:border-primary/50 transition-colors"
-                  onClick={handleWalletClick}
+                  onClick={() => handleWalletClick(wallet.id)}
                   role="listitem"
                   aria-label={`Connect with ${wallet.name}`}
                 >

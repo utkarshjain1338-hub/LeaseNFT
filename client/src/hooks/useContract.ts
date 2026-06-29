@@ -202,7 +202,11 @@ export function useContract() {
   const initMutation = useMutation({
     mutationFn: async () => {
       if (!address) throw new Error("Wallet not connected");
-      return callContract("init", [], address, false);
+      try {
+        return await callContract("init", [], address, false);
+      } catch (err) {
+        throw new Error(classifyError(err));
+      }
     },
     onSuccess: (hash) => {
       addTransaction({
@@ -217,8 +221,9 @@ export function useContract() {
       queryClient.invalidateQueries({ queryKey: ["lease"] });
     },
     onError: (err: unknown) => {
+      // Log only — do NOT re-throw inside onError, it creates an unhandled
+      // promise rejection on top of the error already captured by React Query.
       console.error("[LeaseNFT] initMutation error:", err);
-      throw new Error(classifyError(err));
     },
   });
 
@@ -235,18 +240,21 @@ export function useContract() {
       maxDuration: number;
     }) => {
       if (!address) throw new Error("Wallet not connected");
-      // FIX 1: use toScValAddress(tokenAddress) instead of toScValU64(parseInt(...))
-      return callContract(
-        "list_nft",
-        [
-          toScValString(tokenId),
-          toScValAddress(tokenAddress),
-          toScValI128(dailyRate),
-          toScValU64(maxDuration),
-        ],
-        address,
-        true
-      );
+      try {
+        return await callContract(
+          "list_nft",
+          [
+            toScValString(tokenId),
+            toScValAddress(tokenAddress),
+            toScValI128(dailyRate),
+            toScValU64(maxDuration),
+          ],
+          address,
+          true
+        );
+      } catch (err) {
+        throw new Error(classifyError(err));
+      }
     },
     onSuccess: (hash) => {
       addTransaction({
@@ -261,8 +269,8 @@ export function useContract() {
       queryClient.invalidateQueries({ queryKey: ["lease"] });
     },
     onError: (err: unknown) => {
+      // Log only — do NOT re-throw inside onError.
       console.error("[LeaseNFT] listNftMutation error:", err);
-      throw new Error(classifyError(err));
     },
   });
 
@@ -275,12 +283,16 @@ export function useContract() {
       durationDays: number;
     }) => {
       if (!address) throw new Error("Wallet not connected");
-      return callContract(
-        "lease_nft",
-        [toScValU64(listingId), toScValU64(durationDays)],
-        address,
-        true
-      );
+      try {
+        return await callContract(
+          "lease_nft",
+          [toScValU64(listingId), toScValU64(durationDays)],
+          address,
+          true
+        );
+      } catch (err) {
+        throw new Error(classifyError(err));
+      }
     },
     onSuccess: (hash) => {
       addTransaction({
@@ -295,20 +307,24 @@ export function useContract() {
       queryClient.invalidateQueries({ queryKey: ["lease"] });
     },
     onError: (err: unknown) => {
+      // Log only — do NOT re-throw inside onError.
       console.error("[LeaseNFT] leaseNftMutation error:", err);
-      throw new Error(classifyError(err));
     },
   });
 
   const endLeaseMutation = useMutation({
     mutationFn: async (listingId: number) => {
       if (!address) throw new Error("Wallet not connected");
-      return callContract(
-        "end_lease",
-        [toScValU64(listingId)],
-        address,
-        true
-      );
+      try {
+        return await callContract(
+          "end_lease",
+          [toScValU64(listingId)],
+          address,
+          true
+        );
+      } catch (err) {
+        throw new Error(classifyError(err));
+      }
     },
     onSuccess: (hash) => {
       addTransaction({
@@ -323,8 +339,8 @@ export function useContract() {
       queryClient.invalidateQueries({ queryKey: ["lease"] });
     },
     onError: (err: unknown) => {
+      // Log only — do NOT re-throw inside onError.
       console.error("[LeaseNFT] endLeaseMutation error:", err);
-      throw new Error(classifyError(err));
     },
   });
 
