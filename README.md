@@ -275,6 +275,37 @@ ContractError
 
 ---
 
+## 📸 Screenshots
+
+### 🏠 Home Page
+![Home Page](./screenshots/Home-screen.png)
+
+### 📱 Mobile Responsive View
+![Mobile Home](./screenshots/mobile-view.png)
+
+### 🔗 Wallet Connected
+![Wallet](./screenshots/Dashboard.png)
+
+### 🧾 NFT Listing
+![List NFT](./screenshots/app.png)
+
+### ⚡ Lease Success
+![Lease Success](./screenshots/lease-listed.png)
+
+### ✅ CI Pipeline
+![CI](./screenshots/ci-passing.png)
+
+### Stellar Page
+![hash](./screenshots/stellar-page-transcation-hash.png)
+
+### Activity
+![activity](./screenshots/Activity.png)
+
+### Transaction history
+![history](./screenshots/Transactions.png)
+
+---
+
 ## License
 
 MIT
