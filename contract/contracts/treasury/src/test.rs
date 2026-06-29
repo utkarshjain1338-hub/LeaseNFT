@@ -8,7 +8,7 @@ use soroban_sdk::{Address, Env};
 // Helpers
 // ---------------------------------------------------------------------------
 
-fn setup(env: &Env) -> (Address, TreasuryClient) {
+fn setup(env: &Env) -> (Address, TreasuryClient<'_>) {
     let contract_id = env.register(Treasury, ());
     let client = TreasuryClient::new(env, &contract_id);
     let admin = Address::generate(env);

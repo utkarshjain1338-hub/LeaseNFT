@@ -14,7 +14,7 @@ fn make_env() -> Env {
     env
 }
 
-fn register_lease_nft(env: &Env) -> (LeaseNFTClient, Address) {
+fn register_lease_nft(env: &Env) -> (LeaseNFTClient<'_>, Address) {
     let id = env.register(LeaseNFT, ());
     let client = LeaseNFTClient::new(env, &id);
     client.init(&None);
@@ -26,7 +26,7 @@ fn init_with_listing(
     env: &Env,
     daily_rate: i128,
     max_duration: u64,
-) -> (LeaseNFTClient, u64, Address, Address) {
+) -> (LeaseNFTClient<'_>, u64, Address, Address) {
     let (client, _) = register_lease_nft(env);
     let owner = Address::generate(env);
     let token_addr = Address::generate(env);
