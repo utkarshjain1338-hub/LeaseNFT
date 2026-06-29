@@ -221,13 +221,7 @@ fn test_double_init() {
     let owner = Address::generate(&env);
     let token_id = String::from_str(&env, "test");
 
-    let id = client.list_nft(
-        &owner,
-        &token_id,
-        &owner,
-        &10,
-        &5,
-    );
+    let id = client.list_nft(&owner, &token_id, &owner, &10, &5);
 
     assert_eq!(id, 1);
 }
