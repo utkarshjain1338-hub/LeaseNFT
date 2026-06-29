@@ -1,8 +1,9 @@
 #![cfg(test)]
 
 use super::*;
-use soroban_sdk::testutils::{Address as _, Ledger as _};
-use soroban_sdk::{Address, Env, String};
+use crate::LeaseNFTClient;
+use soroban_sdk::testutils::Ledger as _;
+use soroban_sdk::{testutils::Address as _, Address, Env, String};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -211,18 +212,21 @@ fn test_end_lease_without_active_lease() {
 
 #[test]
 fn test_double_init() {
-    client.init(&None);
-    client.init(&None); // should be safe, no panic
+    let env = Env::default();
+    env.mock_all_auths();
 
-    // state should remain valid
+    let contract_id = env.register(crate::LeaseNFT, ());
+    let client = LeaseNFTClient::new(&env, &contract_id);
+
+    client.init(&None);
+    client.init(&None); // idempotent
+
     assert_eq!(client.get_listing_count(), 0);
 
-    // contract still works normally
     let owner = Address::generate(&env);
     let token_id = String::from_str(&env, "test");
 
     let id = client.list_nft(&owner, &token_id, &owner, &10, &5);
-
     assert_eq!(id, 1);
 }
 

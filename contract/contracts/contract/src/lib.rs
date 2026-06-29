@@ -37,7 +37,7 @@ pub struct ActiveLease {
 /// The `#[contractclient]` macro generates `TreasuryClient` from this trait.
 #[contractclient(name = "TreasuryClient")]
 pub trait TreasuryTrait {
-    fn deposit_fee(env: Env, from_contract: Address, listing_id: u64, amount: i128);
+    fn deposit_fee(from_contract: Address, listing_id: u64, amount: i128);
 }
 
 #[contract]
