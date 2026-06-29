@@ -1,7 +1,11 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, String, Symbol};
+use soroban_sdk::{
+    contract, contractclient, contractimpl, contracttype, symbol_short, Address, Env, String,
+    Symbol,
+};
 
 const COUNT_KEY: Symbol = symbol_short!("COUNT");
+const TREASURY_KEY: Symbol = symbol_short!("TREASURY");
 
 #[contracttype]
 pub enum DataKey {
@@ -29,17 +33,35 @@ pub struct ActiveLease {
     pub total_fee: i128,
 }
 
+/// Minimal Treasury interface for cross-contract calls.
+/// The `#[contractclient]` macro generates `TreasuryClient` from this trait.
+#[contractclient(name = "TreasuryClient")]
+pub trait TreasuryTrait {
+    fn deposit_fee(env: Env, from_contract: Address, listing_id: u64, amount: i128);
+}
+
 #[contract]
 pub struct LeaseNFT;
 
 #[contractimpl]
 impl LeaseNFT {
     /// Initialize the contract listing counter.
-    pub fn init(env: Env) {
+    ///
+    /// - `treasury`: Optional address of the Treasury contract. When set,
+    ///   `lease_nft` will call `Treasury.deposit_fee()` for every new lease
+    ///   as cross-contract inter-contract communication.
+    pub fn init(env: Env, treasury: Option<Address>) {
         if env.storage().instance().has(&COUNT_KEY) {
             panic!("already initialized");
         }
         env.storage().instance().set(&COUNT_KEY, &0u64);
+        if let Some(addr) = treasury {
+            env.storage().instance().set(&TREASURY_KEY, &addr);
+        }
+        env.events().publish(
+            (symbol_short!("leasenft"), symbol_short!("init")),
+            env.ledger().sequence(),
+        );
     }
 
     /// List an NFT for lease. Returns the new listing ID.
@@ -58,18 +80,27 @@ impl LeaseNFT {
         env.storage().persistent().set(
             &DataKey::Listing(count),
             &Listing {
-                owner,
-                token_id,
-                token_address,
+                owner: owner.clone(),
+                token_id: token_id.clone(),
+                token_address: token_address.clone(),
                 daily_rate,
                 max_duration,
                 active: true,
             },
         );
+        // Emit listing created event
+        env.events().publish(
+            (symbol_short!("leasenft"), symbol_short!("listed")),
+            (count, owner, token_id, daily_rate, max_duration),
+        );
         count
     }
 
     /// Lease a listed NFT for a given number of days.
+    ///
+    /// If a Treasury contract is registered, this calls `Treasury.deposit_fee()`
+    /// via cross-contract invocation — this is the inter-contract communication
+    /// pattern required for Orange Belt certification.
     pub fn lease_nft(env: Env, renter: Address, listing_id: u64, duration_days: u64) {
         renter.require_auth();
         let mut listing: Listing = env
@@ -89,47 +120,72 @@ impl LeaseNFT {
         env.storage().persistent().set(
             &DataKey::ActiveLease(listing_id),
             &ActiveLease {
-                renter,
+                renter: renter.clone(),
                 start_time: now,
                 end_time: now + duration_days * 86400,
                 total_fee,
             },
         );
+
+        // Emit lease event
+        env.events().publish(
+            (symbol_short!("leasenft"), symbol_short!("leased")),
+            (listing_id, renter.clone(), duration_days, total_fee),
+        );
+
+        // ─── Inter-contract communication ──────────────────────────────────
+        // If a Treasury contract was registered during init(), forward the fee
+        // to it via cross-contract invocation. This demonstrates Soroban's
+        // invoke_contract pattern for inter-contract communication.
+        if let Some(treasury_id) = env
+            .storage()
+            .instance()
+            .get::<Symbol, Address>(&TREASURY_KEY)
+        {
+            let treasury = TreasuryClient::new(&env, &treasury_id);
+            treasury.deposit_fee(&env.current_contract_address(), &listing_id, &total_fee);
+        }
     }
 
     /// End an active lease. Can be called by owner or renter.
     pub fn end_lease(env: Env, caller: Address, listing_id: u64) {
-    caller.require_auth();
+        caller.require_auth();
 
-    let mut listing: Listing = env
-        .storage()
-        .persistent()
-        .get(&DataKey::Listing(listing_id))
-        .expect("listing not found");
+        let mut listing: Listing = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Listing(listing_id))
+            .expect("listing not found");
 
-    let lease: ActiveLease = env
-        .storage()
-        .persistent()
-        .get(&DataKey::ActiveLease(listing_id))
-        .expect("no active lease for this listing");
+        let lease: ActiveLease = env
+            .storage()
+            .persistent()
+            .get(&DataKey::ActiveLease(listing_id))
+            .expect("no active lease for this listing");
 
-    assert!(
-        caller == listing.owner || caller == lease.renter,
-        "only owner or renter can end lease"
-    );
+        assert!(
+            caller == listing.owner || caller == lease.renter,
+            "only owner or renter can end lease"
+        );
 
-    // Remove active lease
-    env.storage()
-        .persistent()
-        .remove(&DataKey::ActiveLease(listing_id));
+        // Remove active lease
+        env.storage()
+            .persistent()
+            .remove(&DataKey::ActiveLease(listing_id));
 
-    // Make listing available again
-    listing.active = true;
+        // Make listing available again
+        listing.active = true;
 
-    env.storage()
-        .persistent()
-        .set(&DataKey::Listing(listing_id), &listing);
-}
+        env.storage()
+            .persistent()
+            .set(&DataKey::Listing(listing_id), &listing);
+
+        // Emit end_lease event
+        env.events().publish(
+            (symbol_short!("leasenft"), symbol_short!("ended")),
+            (listing_id, caller),
+        );
+    }
 
     /// Get listing details.
     pub fn get_listing(env: Env, listing_id: u64) -> Listing {
@@ -150,6 +206,11 @@ impl LeaseNFT {
     /// Get total listing count.
     pub fn get_listing_count(env: Env) -> u64 {
         env.storage().instance().get(&COUNT_KEY).unwrap_or(0)
+    }
+
+    /// Get the registered Treasury contract address (if set during init).
+    pub fn get_treasury(env: Env) -> Option<Address> {
+        env.storage().instance().get(&TREASURY_KEY)
     }
 }
 

@@ -1,0 +1,64 @@
+name: Contract CI
+
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - "contract/**"
+      - ".github/workflows/contract.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "contract/**"
+      - ".github/workflows/contract.yml"
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  contract-ci:
+    name: Rust / Soroban Contract
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: wasm32-unknown-unknown
+          components: rustfmt, clippy
+
+      - name: Cache Cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            contract/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('contract/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Check formatting
+        working-directory: contract
+        run: cargo fmt --all -- --check
+
+      - name: Run Clippy (deny warnings)
+        working-directory: contract
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Run all tests
+        working-directory: contract
+        run: cargo test --all
+
+      - name: Build WASM (release)
+        working-directory: contract
+        run: cargo build --target wasm32-unknown-unknown --release
+
+      - name: Report test summary
+        if: always()
+        run: echo "Contract CI complete"

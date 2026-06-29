@@ -1,398 +1,250 @@
 # LeaseNFT — NFT Leasing Platform on Stellar Soroban
 
-A permissionless NFT leasing platform built on Stellar Soroban smart contracts. List NFTs for lease, rent them by the day, and track everything on-chain.
+> A production-grade, permissionless NFT leasing dApp built with Rust/Soroban smart contracts and a Next.js frontend. Built for the Stellar Orange Belt certification.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-
----
-
-## Project Description
-
-LeaseNFT is a full-stack dApp on Stellar Soroban that allows NFT owners to monetize their assets through time-limited leases. Renters can access NFTs for a daily fee without buying ownership. All lease terms, fees, and state transitions are recorded on-chain via a Soroban smart contract.
-
----
-
-## Features
-
-- **📜 Smart Contract** — Custom Soroban contract for listing, leasing, and managing NFT rentals
-- **🔍 Automated Discovery** — Automatically queries and discovers all active/historical listings directly from on-chain state via `get_listing_count()`
-- **🔗 Multi-Wallet Support** — Connect with Freighter, Albedo, LOBSTR, xBull, Rabet, Hana, WalletConnect
-- **💳 Wallet Persistence** — Reconnects automatically after page refresh
-- **📊 Dashboard** — View balances, transaction history, and contract events
-- **⚡ Real-Time Updates** — Auto-polling for transaction status and event tracking
-- **🔍 Activity Feed** — Live feed of contract events and transaction updates, deduplicated
-- **🧾 Transaction History** — Persistent across sessions, with Stellar Explorer links
-- **⚠️ Error Handling** — 7+ error types with user-friendly messages, no raw exceptions
-- **🌙 Dark Mode** — Full dark mode with shadcn/ui
-- **📱 Responsive** — Works on mobile, tablet, and desktop
-- **♿ Accessible** — ARIA labels, keyboard navigation, skip-to-content, live regions
-
----
-
-## Tech Stack
-
-| Layer            | Technology                                |
-|------------------|-------------------------------------------|
-| **Blockchain**   | Stellar Soroban (Testnet)                 |
-| **Smart Contract** | Rust (soroban-sdk v25)                  |
-| **Frontend**     | Next.js 16, TypeScript                    |
-| **Styling**      | Tailwind CSS v4, shadcn/ui                |
-| **Wallet**       | StellarWalletsKit (`@creit.tech`)         |
-| **State**        | Zustand (with localStorage persistence)   |
-| **Server State** | TanStack Query v5                         |
-| **Toasts**       | sonner                                    |
-| **Icons**        | lucide-react                              |
-
----
-
-## Folder Structure
-
-```
-LeaseNFT/
-├── contract/                        # Soroban smart contract workspace
-│   ├── Cargo.toml                   # Workspace config
-│   └── contracts/contract/
-│       ├── Cargo.toml               # Contract package
-│       └── src/
-│           ├── lib.rs               # Contract implementation
-│           └── test.rs              # 8 unit tests
-│
-└── client/                          # Next.js 16 frontend
-    ├── .env.example                 # Environment variable template
-    ├── scripts/
-    │   └── deploy.sh                # Automated deployment script
-    └── src/
-        ├── app/
-        │   ├── layout.tsx           # Root layout (SEO, accessibility)
-        │   ├── page.tsx             # Home / landing page
-        │   ├── dashboard/           # Wallet + stats dashboard
-        │   ├── app-page/            # Contract interaction UI
-        │   └── activity/            # Activity + transaction feed
-        ├── components/
-        │   ├── ui/                  # shadcn/ui primitives
-        │   ├── Navbar.tsx           # Navigation with wallet controls
-        │   ├── WalletModal.tsx      # Multi-wallet selection modal
-        │   ├── Contract.tsx         # Smart contract interaction UI
-        │   ├── ActivityFeed.tsx     # Real-time event feed
-        │   └── TransactionFeed.tsx  # Transaction history
-        ├── hooks/
-        │   ├── useWallet.ts         # Wallet connect/disconnect/reconnect
-        │   └── useContract.ts       # Contract calls + mutation hooks
-        ├── lib/
-        │   ├── stellar.ts           # Stellar SDK helpers, signing, RPC
-        │   ├── config.ts            # Network config, explorer URLs
-        │   ├── utils.ts             # Address formatting, error parsing
-        │   └── providers.tsx        # QueryClient + Toaster provider
-        ├── stores/
-        │   ├── walletStore.ts       # Zustand wallet state (persisted)
-        │   ├── transactionStore.ts  # Zustand tx history (persisted)
-        │   └── eventStore.ts        # Zustand contract events (persisted)
-        └── types/
-            └── index.ts             # Shared TypeScript interfaces
-```
-
----
-
-## Setup
-
-### Prerequisites
-
-| Tool         | Version | Install |
-|--------------|---------|---------|
-| Rust         | 1.84+   | `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \| sh` |
-| Stellar CLI  | latest  | `cargo install stellar-cli --features opt` |
-| Bun          | 1.0+    | `curl -fsSL https://bun.sh/install \| bash` |
-| Node.js      | 18+     | [nodejs.org](https://nodejs.org) |
-
----
-
-## Environment Variables
-
-Copy `.env.example` to `.env` inside the `client/` directory:
-
-```bash
-cd client
-cp .env.example .env
-```
-
-| Variable                              | Required | Description                                     |
-|---------------------------------------|----------|-------------------------------------------------|
-| `NEXT_PUBLIC_STELLAR_NETWORK`         | ✅        | `testnet` or `mainnet`                          |
-| `NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE` | ✅    | Network passphrase string                        |
-| `NEXT_PUBLIC_STELLAR_RPC_URL`         | ✅        | Soroban RPC endpoint URL                        |
-| `NEXT_PUBLIC_CONTRACT_ID`             | ✅        | Deployed contract address (56-char `C…`)        |
-| `NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID` | ⬜      | WalletConnect Cloud project ID (optional)       |
-
-**Testnet values:**
-```
-NEXT_PUBLIC_STELLAR_NETWORK=testnet
-NEXT_PUBLIC_STELLAR_NETWORK_PASSPHRASE=Test SDF Network ; September 2015
-NEXT_PUBLIC_STELLAR_RPC_URL=https://soroban-testnet.stellar.org
-```
-
----
-
-## Contract Deployment
-
-### 1. Fund a testnet account
-
-```bash
-stellar keys generate dev --network testnet --fund
-```
-
-### 2. Build the contract
-
-```bash
-cd contract
-stellar contract build
-```
-
-### 3. Deploy to Testnet
-
-```bash
-stellar contract deploy \
-  --wasm target/wasm32v1-none/release/lease_nft.wasm \
-  --source-account dev \
-  --network testnet
-```
-
-Copy the output contract address and set it as `NEXT_PUBLIC_CONTRACT_ID` in `client/.env`.
-
-### 4. Initialize the contract (one-time)
-
-Call `init()` from the frontend App page, or via CLI:
-
-```bash
-stellar contract invoke \
-  --id <CONTRACT_ID> \
-  --source dev \
-  --network testnet \
-  -- init
-```
-
-### 5. Generate TypeScript bindings (optional)
-
-```bash
-cd client
-stellar contract bindings typescript \
-  --contract-id <CONTRACT_ID> \
-  --network testnet \
-  --output-dir packages/contract \
-  --overwrite
-bun add file:./packages/contract
-```
-
----
-
-## Running Locally
-
-```bash
-# Install dependencies
-cd client
-bun install
-
-# Start development server
-bun run dev
-```
-
-Visit [http://localhost:3000](http://localhost:3000).
-
----
-
-## Wallet Support
-
-LeaseNFT uses [`@creit.tech/stellar-wallets-kit`](https://github.com/Creit-Tech/Stellar-Wallets-Kit) to support all major Stellar wallets through a unified modal:
-
-| Wallet          | Type                    | Notes                         |
-|-----------------|-------------------------|-------------------------------|
-| **Freighter**   | Browser extension       | Recommended; built by SDF     |
-| **Albedo**      | Web signing service     | No extension needed           |
-| **LOBSTR**      | Mobile + web            | Popular Stellar wallet        |
-| **xBull**       | Browser extension       | Feature-rich                  |
-| **Rabet**       | Browser extension       | Lightweight                   |
-| **Hana**        | Mobile                  | Stellar-focused               |
-| **WalletConnect** | QR / deep link        | Requires project ID in `.env` |
-
-The wallet modal opens the kit's built-in auth flow, which auto-detects installed wallets. The selected wallet session is persisted in `localStorage` and automatically reconnected on page refresh.
-
----
-
-## Smart Contract API
-
-### Contract Address
-
-```
-CA3Z2A63KCHNDB37NDWEBJ6ACFXKIOGT3FVRD7FFX36MD2UYINAN5F6X
-```
-
-> **Note:** If this address is no longer active, redeploy using the steps above and replace this value in `client/.env` and this README.
-
-### Functions
-
-| Function | Parameters | Auth Required | Returns |
-|---|---|---|---|
-| `init()` | — | No | — |
-| `list_nft(owner, token_id, token_address, daily_rate, max_duration)` | Address, String, Address, i128, u64 | Yes (owner) | `u64` listing ID |
-| `lease_nft(renter, listing_id, duration_days)` | Address, u64, u64 | Yes (renter) | — |
-| `end_lease(caller, listing_id)` | Address, u64 | Yes (owner or renter) | — |
-| `get_listing(listing_id)` | u64 | No | `Listing` struct |
-| `get_lease(listing_id)` | u64 | No | `ActiveLease` struct |
-| `get_listing_count()` | — | No | `u64` total count of listings |
-
-### Structs
-
-```rust
-pub struct Listing {
-    pub owner: Address,
-    pub token_id: String,
-    pub token_address: Address,
-    pub daily_rate: i128,    // in stroops
-    pub max_duration: u64,   // in days
-    pub active: bool,
-}
-
-pub struct ActiveLease {
-    pub renter: Address,
-    pub start_time: u64,     // Unix timestamp (ledger)
-    pub end_time: u64,       // start_time + duration_days * 86400
-    pub total_fee: i128,     // daily_rate * duration_days
-}
-```
-
-### Events
-
-The contract emits Soroban diagnostic events on every state change:
-
-- `ListingCreated` — new NFT listed for lease
-- `ListingLeased` — NFT leased by a renter
-- `ListingEnded` — active lease ended
-
----
-
-## Error Handling
-
-Every error is caught, classified, and shown as a user-friendly message. Raw exceptions are never shown in the UI — technical details are logged only to the browser console.
-
-| # | Error | User Message |
-|---|-------|--------------|
-| 1 | Wallet not connected | "Please connect a wallet before continuing." |
-| 2 | User rejected transaction | "Transaction cancelled" |
-| 3 | Transaction failed on-chain | Decoded reason if available, otherwise "Transaction failed on network" |
-| 4 | RPC unavailable | "RPC unavailable — please try again in a moment" (auto-retried once) |
-| 5 | Contract call failure | Decoded contract error code (e.g., "Listing is not active") |
-| 6 | Invalid input (forms) | Field-specific validation message before any transaction |
-| 7 | Network mismatch | "Network mismatch — please switch your wallet to Stellar Testnet." |
-
-Contract error codes mapped:
-
-| Code | Message |
-|------|---------|
-| 1 | Contract already initialized |
-| 2 | Listing not found |
-| 3 | Unauthorized — you are not the owner or renter |
-| 4 | Listing already exists |
-| 5 | Listing is not active (already leased) |
-| 6 | Duration exceeds the maximum allowed |
-
----
-
-## Transaction Status
-
-Every transaction progresses through a visible pipeline:
-
-```
-Pending → Submitting → Confirmed → Explorer Link
-                    ↘ Failed
-```
-
-- Hash displayed (shortened) immediately after submission
-- Inline Stellar Explorer link on every transaction card
-- Transactions persisted in `localStorage` across page refreshes
-- Activity feed updates automatically with status changes
-
----
-
-## Screenshots
-
-> Replace these placeholders with actual screenshots before submission.
-
-| Screenshot | Description |
-|---|---|
-| `screenshots/wallet-selection.png` | Wallet selection modal with 7 wallet options |
-| `screenshots/wallet-connected.png` | Navbar showing address, XLM balance, network badge |
-| `screenshots/dashboard.png` | Dashboard with wallet info, tx history, events |
-| `screenshots/contract-app.png` | Contract interaction page (List, Lease, End, Query) |
-| `screenshots/activity-feed.png` | Activity feed with real-time events and tx status |
-| `screenshots/transaction-success.png` | Successful transaction with explorer link |
-
----
-
-## Transaction Hash
-
-```
-<!-- Replace with an actual transaction hash after your first successful contract interaction -->
-TRANSACTION_HASH_PLACEHOLDER
-```
-
-**Explorer URL format:**
-```
-https://stellar.expert/explorer/testnet/tx/<TRANSACTION_HASH>
-```
-
-Example: [https://stellar.expert/explorer/testnet](https://stellar.expert/explorer/testnet)
+[![Contract CI](https://github.com/yourusername/LeaseNFT/actions/workflows/contract.yml/badge.svg)](https://github.com/yourusername/LeaseNFT/actions/workflows/contract.yml)
+[![Frontend CI](https://github.com/yourusername/LeaseNFT/actions/workflows/frontend.yml/badge.svg)](https://github.com/yourusername/LeaseNFT/actions/workflows/frontend.yml)
 
 ---
 
 ## Live Demo
 
-> Deploy to Vercel for a live demo URL.
+> **Testnet Contract**: `CCXXX...` (see `client/.env` after deployment)
+> **Network**: Stellar Testnet
 
-1. Push the repository to GitHub
-2. Import at [vercel.com/new](https://vercel.com/new)
-3. Set **Root Directory** to `client`
-4. Add all environment variables from `client/.env.example`
-5. Deploy — Vercel auto-detects Next.js
+---
+
+## Features
+
+### Smart Contracts (Rust / Soroban v25)
+
+| Contract | Description |
+|----------|-------------|
+| **LeaseNFT** | Core listing, leasing, and lifecycle management |
+| **Treasury** | Fee collection via cross-contract invocation |
+
+**LeaseNFT functions**: `init` · `list_nft` · `lease_nft` · `end_lease` · `get_listing` · `get_lease` · `get_listing_count` · `get_treasury`
+
+**Treasury functions**: `init` · `deposit_fee` · `withdraw` · `get_balance` · `get_admin`
+
+**Inter-contract communication**: `lease_nft()` calls `Treasury.deposit_fee()` via Soroban cross-contract invocation.
+
+### Frontend (Next.js 16 / TypeScript / Tailwind v4)
+
+- Wallet connection via Stellar Wallets Kit (Freighter, Albedo, LOBSTR, WalletConnect)
+- Real-time activity feed with cursor-based event streaming
+- Automatic listing discovery (scans all on-chain listings)
+- Dark mode, skeleton loaders, toast notifications
+- Mobile-responsive layout with proper touch targets
+- Typed error classes mapped from Soroban errors
+- Zod environment validation with fail-fast errors
+
+---
+
+## Architecture
 
 ```
-https://<your-project>.vercel.app
+LeaseNFT Contract ──cross-contract──► Treasury Contract
+       │                                    │
+       │ events                             │ events
+       ▼                                    ▼
+Soroban RPC (getEvents)              Soroban RPC
+       │
+       ▼ incremental polling (10s cursor)
+eventService.ts
+       │
+       ▼
+Zustand eventStore → ActivityFeed UI
+```
+
+See [docs/architecture.md](docs/architecture.md) for the full system diagram.
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+- Rust + `wasm32-unknown-unknown` target
+- [Stellar CLI](https://developers.stellar.org/docs/tools/stellar-cli)
+- Node.js / [Bun](https://bun.sh)
+
+### 1. Clone & Install
+
+```bash
+git clone https://github.com/yourusername/LeaseNFT.git
+cd LeaseNFT
+cd client && bun install
+```
+
+### 2. Deploy Contracts
+
+```bash
+export STELLAR_SECRET_KEY=SXXXXXXXXXX
+
+# Optional: deploy Treasury first
+bash scripts/deploy_treasury.sh
+
+# Deploy LeaseNFT (with treasury)
+bash scripts/deploy_contract.sh --treasury <TREASURY_ID>
+```
+
+### 3. Run Frontend
+
+```bash
+cd client
+bun run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) and connect your wallet.
+
+---
+
+## Contract Tests
+
+```bash
+cd contract
+cargo test --all
+# ✓ 24 LeaseNFT tests + 12 Treasury tests = 36 total
+```
+
+Test coverage:
+
+- Full lease lifecycle
+- Unauthorized access prevention
+- Fee calculation accuracy
+- Cross-contract treasury interaction
+- Concurrent listings
+- Edge cases (min/max values, overflow, re-leasing)
+
+---
+
+## Frontend Tests (Playwright)
+
+```bash
+cd client
+bunx playwright install chromium
+bun run test:e2e
+```
+
+Test suites:
+- `home.spec.ts` — Landing page, hero, features
+- `dashboard.spec.ts` — Activity feed, transaction history
+- `listing-form.spec.ts` — Form validation, field presence
+- `lease-form.spec.ts` — Connected/disconnected states
+- `activity-feed.spec.ts` — Real-time events, mock data
+
+---
+
+## CI/CD
+
+GitHub Actions pipelines in `.github/workflows/`:
+
+| Workflow | Steps |
+|----------|-------|
+| `contract.yml` | `cargo fmt`, `cargo clippy`, `cargo test`, WASM build |
+| `frontend.yml` | `bun install`, `tsc --noEmit`, `eslint`, `next build`, Playwright |
+| `ci.yml` | Unified pipeline — fails if either sub-pipeline fails |
+
+---
+
+## Project Structure
+
+```
+LeaseNFT/
+├── .github/workflows/          # CI/CD
+├── contract/
+│   └── contracts/
+│       ├── contract/src/       # LeaseNFT contract + 24 tests
+│       └── treasury/src/       # Treasury contract + 12 tests
+├── client/
+│   ├── src/
+│   │   ├── app/                # Next.js pages
+│   │   ├── components/         # UI components
+│   │   ├── hooks/              # React hooks
+│   │   ├── services/           # Business logic services
+│   │   ├── stores/             # Zustand state
+│   │   └── lib/                # Stellar, config, errors, env
+│   └── tests/e2e/              # Playwright tests
+├── scripts/                    # Deployment scripts
+└── docs/                       # Documentation
 ```
 
 ---
 
-## Folder Structure (contract)
+## Service Layer
 
+The frontend follows a service-layer architecture:
+
+| Service | Responsibility |
+|---------|---------------|
+| `contractService.ts` | All contract read/write operations |
+| `walletService.ts` | Wallet init and address helpers |
+| `eventService.ts` | Incremental event polling with cursor |
+| `notificationService.ts` | Centralized toast notifications |
+
+Business logic lives in services. Components handle rendering only.
+
+---
+
+## Error Handling
+
+All errors are typed via `src/lib/errors.ts`:
+
+```typescript
+TransactionCancelledError
+ListingNotFoundError
+ListingNotActiveError
+DurationExceedsMaxError
+UnauthorizedError
+WalletNotConnectedError
+NetworkMismatchError
+NetworkError
+WalletSigningError
+ContractError
 ```
-contract/
-├── Cargo.toml               # Workspace
-├── Cargo.lock
-└── contracts/contract/
-    ├── Cargo.toml           # Contract crate
-    ├── Makefile
-    └── src/
-        ├── lib.rs           # LeaseNFT contract
-        └── test.rs          # 8 unit tests (all passing)
-```
 
-## Running Contract Tests
+`parseContractError(err)` converts any unknown error to a typed class — raw exceptions never reach the UI.
 
-```bash
-cd contract
-cargo test
-```
+---
 
-All 8 tests pass:
-- `test_full_lease_lifecycle`
-- `test_renter_can_end_lease`
-- `test_get_nonexistent_listing` (panic expected)
-- `test_lease_inactive_listing` (panic expected)
-- `test_multiple_listings`
-- `test_end_lease_without_active_lease` (panic expected)
-- `test_double_init` (panic expected)
-- `test_lease_exceeds_max_duration` (panic expected)
+## Documentation
+
+| Doc | Description |
+|-----|-------------|
+| [docs/architecture.md](docs/architecture.md) | System + inter-contract diagrams |
+| [docs/deployment.md](docs/deployment.md) | Deploy to testnet/mainnet |
+| [docs/testing.md](docs/testing.md) | Run contract + e2e tests |
+| [docs/demo-script.md](docs/demo-script.md) | 2-minute demo walkthrough |
+
+---
+
+## Security Considerations
+
+- All contract write functions use `caller.require_auth()` (Soroban authorization)
+- Treasury accepts deposits from any caller — for production, restrict to known LeaseNFT contract IDs
+- Frontend never handles or stores private keys
+- `parseContractError()` sanitizes all errors before UI display
+- Zod validates all environment variables at startup
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Smart Contracts | Rust, Soroban SDK v25 |
+| Frontend | Next.js 16, TypeScript, Tailwind CSS v4 |
+| UI Components | shadcn/ui, Radix UI, Lucide Icons |
+| State | Zustand + TanStack Query |
+| Wallet | Stellar Wallets Kit |
+| Tests | cargo test (contracts), Playwright (e2e) |
+| CI/CD | GitHub Actions |
+| Env Validation | Zod |
+| Notifications | Sonner |
 
 ---
 
 ## License
 
-MIT — see [LICENSE](LICENSE) for details.
+MIT
