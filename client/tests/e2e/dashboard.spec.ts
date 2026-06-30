@@ -13,22 +13,26 @@ test.describe("Dashboard", () => {
     ).toBeVisible();
   });
 
-  test("activity feed section is visible", async ({ page }) => {
-    await expect(page.getByText("Activity Feed")).toBeVisible();
+  test("contract events section is visible", async ({ page }) => {
+    await expect(page.getByText("Contract Events")).toBeVisible();
   });
 
   test("transaction history section is visible", async ({ page }) => {
     // Transaction section should be present
-    const txSection = page.getByText(/Transaction/i);
+    const txSection = page.getByText(/Recent Transactions/i);
     await expect(txSection.first()).toBeVisible();
   });
 
   test("shows empty state when no activity", async ({ page }) => {
-    await expect(page.getByText("No activity yet")).toBeVisible();
+    await expect(page.getByText("No transactions yet")).toBeVisible();
+    await expect(page.getByText("No events yet")).toBeVisible();
   });
 
   test("navigation links are visible", async ({ page }) => {
-    // Navbar should have app link
+    const mobileMenuBtn = page.getByRole("button", { name: "Open menu" });
+    if (await mobileMenuBtn.isVisible()) {
+      await mobileMenuBtn.click();
+    }
     const appLink = page.getByRole("link", { name: /App/i });
     await expect(appLink.first()).toBeVisible();
   });

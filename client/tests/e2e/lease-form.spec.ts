@@ -5,9 +5,6 @@ test.describe("Lease Form", () => {
   test.beforeEach(async ({ page }) => {
     await mockWalletConnected(page);
     await page.goto("/app-page");
-    await page.waitForLoadState("networkidle");
-    // Give Zustand hydration time
-    await page.waitForTimeout(500);
   });
 
   test("app page loads without error", async ({ page }) => {
@@ -33,7 +30,7 @@ test.describe("Lease Form", () => {
   });
 
   test("network badge is visible", async ({ page }) => {
-    await expect(page.getByText(/testnet/i).first()).toBeVisible({
+    await expect(page.locator("div[role='main']").getByText(/testnet/i)).toBeVisible({
       timeout: 10_000,
     });
   });
@@ -48,12 +45,11 @@ test.describe("Lease Form", () => {
 test.describe("Lease Form - not connected", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/app-page");
-    await page.waitForLoadState("networkidle");
   });
 
   test("shows wallet required state", async ({ page }) => {
     await expect(
-      page.getByText(/Wallet Required|Connect Wallet/i)
+      page.getByRole("heading", { name: "Wallet Required" })
     ).toBeVisible({ timeout: 10_000 });
   });
 });

@@ -82,7 +82,7 @@ export function ActivityFeed() {
           )}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent aria-live="polite" aria-relevant="additions">
         {deduped.length === 0 ? (
           <div
             className="text-center py-12 text-muted-foreground"

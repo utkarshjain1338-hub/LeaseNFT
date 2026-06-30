@@ -4,12 +4,11 @@ import { mockWalletConnected } from "./wallet-mock";
 test.describe("Activity Feed", () => {
   test.beforeEach(async ({ page }) => {
     await mockWalletConnected(page);
-    await page.goto("/dashboard");
-    await page.waitForLoadState("networkidle");
+    await page.goto("/activity");
   });
 
   test("activity feed card is visible", async ({ page }) => {
-    await expect(page.getByText("Activity Feed")).toBeVisible({
+    await expect(page.getByRole("heading", { name: "Activity Feed" })).toBeVisible({
       timeout: 10_000,
     });
   });
@@ -28,7 +27,7 @@ test.describe("Activity Feed", () => {
 
   test("activity feed has live region for accessibility", async ({ page }) => {
     // Check the aria-live element exists
-    const feed = page.locator("[aria-live]");
+    const feed = page.locator("div[aria-live='polite']");
     await expect(feed.first()).toBeVisible({ timeout: 10_000 });
   });
 });
@@ -73,9 +72,7 @@ test.describe("Activity Feed - with mocked events", () => {
       );
     });
 
-    await page.goto("/dashboard");
-    await page.waitForLoadState("networkidle");
-    await page.waitForTimeout(500);
+    await page.goto("/activity");
 
     // Should now show at least one activity item
     await expect(page.getByText("List NFT for Lease")).toBeVisible({

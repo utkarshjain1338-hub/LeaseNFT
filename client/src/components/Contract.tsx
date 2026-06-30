@@ -317,7 +317,7 @@ export function Contract() {
               aria-label={
                 initMutation.isSuccess
                   ? "Contract already initialized"
-                  : "Initialize the LeaseNFT contract"
+                  : "Initialize Contract"
               }
               aria-busy={initMutation.isPending}
             >

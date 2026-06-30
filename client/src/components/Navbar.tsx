@@ -51,12 +51,12 @@ export function Navbar() {
             </Link>
 
             {/* Desktop nav */}
-            <div className="hidden md:flex items-center gap-1" role="list">
+            <div className="hidden md:flex items-center gap-1">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
                 return (
-                  <Link key={item.href} href={item.href} role="listitem">
+                  <Link key={item.href} href={item.href}>
                     <Button
                       variant={isActive ? "secondary" : "ghost"}
                       size="sm"
@@ -160,7 +160,6 @@ export function Navbar() {
           <div
             id="mobile-menu"
             className="md:hidden border-t p-4 space-y-2"
-            role="menu"
             aria-label="Mobile navigation"
           >
             {navItems.map((item) => {
@@ -171,7 +170,6 @@ export function Navbar() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
-                  role="menuitem"
                 >
                   <Button
                     variant={isActive ? "secondary" : "ghost"}
@@ -187,6 +185,13 @@ export function Navbar() {
 
             {isConnected && address ? (
               <div className="pt-2 space-y-2">
+                <Badge
+                  variant={network === "mainnet" ? "success" : "warning"}
+                  className="uppercase text-[10px] w-full justify-center py-1 truncate block text-center"
+                  aria-label={`Connected to ${network || "testnet"}`}
+                >
+                  {network || "testnet"}
+                </Badge>
                 <Badge
                   variant="outline"
                   className="font-mono text-xs w-full justify-center py-1 truncate block text-center"
